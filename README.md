@@ -7,7 +7,8 @@ For the corresponding Steady device please see the [C implementation](https://gi
 2. run steady-relay
 3. run steady-make-device
 4. copy test.device to the device folder of the [C implementation](https://github.com/pylls/steady-c)
-5. build and run the [C demo device](https://github.com/pylls/steady-c).
+5. build and run the [C demo device](https://github.com/pylls/steady-c)
+6. run steady-echo-collector to read from the relay
 
 ### Paper (TODO)
 [https://eprint.iacr.org/xxxx/xxx](https://eprint.iacr.org/xxxx/xxx)
