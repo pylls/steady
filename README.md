@@ -2,7 +2,7 @@
 A golang implementation of a proof-of-concept Steady relay and simple echo collector.
 For the corresponding Steady device please see the [C implementation](https://github.com/pylls/steady-c).
 
-## Brief instructions to run (TODO)
+## Brief instructions to run
 1. go get github.com/pylls/steady
 2. run steady-relay
 3. run steady-make-device
