@@ -13,12 +13,12 @@ import (
 )
 
 /*
- * general idea of writeN:
+ * general idea of write:
  * - have device send n
  * - attempt to read n blocks, only store in the very end, error early
  * - fixed-size reply: error or auth the last block index
  */
-func writeN(conn net.Conn) {
+func write(conn net.Conn) {
 	// read id
 	id, _, err := getID(conn)
 	if err != nil {
@@ -43,6 +43,11 @@ func writeN(conn net.Conn) {
 		return
 	}
 	N := binary.BigEndian.Uint16(buf)
+
+	if N == 0 {
+		log.Printf("\tgot zero N")
+		return
+	}
 
 	// attempt to buffer N blocks
 	reply := make([]byte, 8+steady.WireAuthSize)
@@ -69,7 +74,7 @@ func writeN(conn net.Conn) {
 	// reply with index of successfully written block, authenticate with policy ID and token
 	buf = make([]byte, 8+steady.WireAuthSize)
 	binary.BigEndian.PutUint64(buf, blocks[len(blocks)-1].Header.Index)
-	copy(buf[8:], lc.Khash([]byte(*token), []byte("writeN"), s.policy.ID, buf[:8]))
+	copy(buf[8:], lc.Khash([]byte(*token), []byte("write"), s.policy.ID, buf[:8]))
 	conn.Write(buf)
 	log.Printf("\twrote %d block(s)", N)
 }
