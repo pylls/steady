@@ -11,7 +11,7 @@ For the corresponding Steady device please see the [C implementation](https://gi
 6. run steady-echo-collector to read from the relay
 
 ### Paper (TODO)
-[https://eprint.iacr.org/xxxx/xxx](https://eprint.iacr.org/xxxx/xxx)
+[https://eprint.iacr.org/2018/737](https://eprint.iacr.org/2018/737)
 
 ### License
 Apache 2.0
