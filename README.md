@@ -10,7 +10,7 @@ For the corresponding Steady device please see the [C implementation](https://gi
 5. build and run the [C demo device](https://github.com/pylls/steady-c)
 6. run steady-echo-collector to read from the relay
 
-### Paper (TODO)
+### Paper
 [https://eprint.iacr.org/2018/737](https://eprint.iacr.org/2018/737)
 
 ### License
