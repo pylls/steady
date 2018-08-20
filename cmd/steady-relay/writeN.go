@@ -1,6 +1,7 @@
 package main
 
 import (
+	"container/list"
 	"encoding/binary"
 	"fmt"
 	"io"
@@ -119,4 +120,17 @@ func readBlock(conn net.Conn, policy steady.Policy, expectedIndex uint64) (b *Bl
 		HeaderEncoded: encodedHeader,
 		Payload:       buf,
 	}, nil
+}
+
+func store(b *Block, blocks *list.List, space uint64, policy steady.Policy) (uint64, uint64) {
+	blocks.PushBack(b)
+	space += b.Header.LenCur
+
+	// remove the front of the list and reduce current size until below max
+	for space > policy.Space {
+		log.Printf("\tremoved old block to make room...")
+		space -= blocks.Remove(blocks.Front()).(*Block).Header.LenCur
+	}
+
+	return space, b.Header.Index + 1
 }

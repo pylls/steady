@@ -17,7 +17,6 @@ const (
 	WireCmdSetup  = 0x1
 	WireCmdRead   = 0x2
 	WireCmdWrite  = 0x3
-	WireCmdWriteN = 0x4
 
 	WireTrue    = 0x1
 	WireFalse   = 0x0
