@@ -56,9 +56,6 @@ func handler(conn net.Conn) {
 		}
 
 		switch buf[1] {
-		case steady.WireCmdWriteN: // auth on ACK
-			log.Println("writeN cmd")
-			writeN(conn)
 		case steady.WireCmdWrite: // auth on ACK
 			log.Println("write cmd")
 			write(conn)
