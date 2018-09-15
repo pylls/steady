@@ -9,7 +9,6 @@ import (
 	"encoding/binary"
 	"fmt"
 	"io/ioutil"
-	"log"
 	"net"
 	"os"
 	"sync"
@@ -23,6 +22,7 @@ type Device struct {
 	Sk     []byte
 	Policy steady.Policy
 	// never written or read from disk below
+	server    string
 	conn      net.Conn
 	testing   bool
 	chanClose chan bool
@@ -98,6 +98,9 @@ func (d *Device) Close() error {
 	close(d.chanLog)
 	d.chanClose <- true
 	d.wait.Wait()
+	if d.conn != nil {
+		d.conn.Close()
+	}
 	return nil
 }
 
@@ -118,9 +121,9 @@ func LoadDevice(path, server, token string, encrypt, compress bool,
 		state.TimePrev = device.Policy.Time
 	}
 
+	device.server = server
 	// attempt to connect to relay and check status
-	device.conn, err = net.Dial("tcp", server)
-	if err != nil {
+	if err := device.connect(); err != nil {
 		return nil, err
 	}
 	status, header, err := checkStatus(device.conn, device.Policy.ID, token)
@@ -155,6 +158,14 @@ func LoadDevice(path, server, token string, encrypt, compress bool,
 		flushSize, blockBufferNum, token)
 
 	return device, nil
+}
+
+func (d *Device) connect() (err error) {
+	if d.conn != nil {
+		d.conn.Close()
+	}
+	d.conn, err = net.Dial("tcp", d.server)
+	return err
 }
 
 func (d *Device) loggingThread(stateFile string, state *DeviceState,
@@ -229,25 +240,48 @@ func (d *Device) sender(in chan []byte, wait *sync.WaitGroup, token string) {
 	numBlocks := make([]byte, 2)
 	binary.BigEndian.PutUint16(numBlocks, 1)
 	for {
-		block, open := <-in
-		if !open {
-			return
-		}
-		for { // hammer until sent
-			d.conn.Write([]byte{steady.WireVersion, steady.WireCmdWrite}) // we want to write a block...
-			d.conn.Write(d.Policy.ID)                                     // ...to this policy...
-			d.conn.Write(numBlocks)                                       // ...only one block...
-			d.conn.Write(block)                                           // ...and here's the block
+		blocks := make([][]byte, 0)
 
-			l, err := d.conn.Read(buf)
-			if err != nil {
-				log.Fatalf("failed to read reply: %v", err) // FIXME, prob continue?
+		// get blocks
+		if len(in) > 1 { // we got a queue, get them all and write
+			for len(in) > 0 {
+				blocks = append(blocks, <-in)
 			}
-			if l != 8+steady.WireAuthSize {
+		} else { // nothing at this moment, block until we get a block
+			block, open := <-in
+			if !open {
+				return
+			}
+			blocks = append(blocks, block)
+		}
+		binary.BigEndian.PutUint16(numBlocks, uint16(len(blocks)))
+
+		// loop until we've written all blocks
+		firstTry := true
+		for {
+			if !firstTry { // only reconnect if not the first try
+				if err := d.connect(); err != nil {
+					continue
+				}
+			}
+			firstTry = false
+
+			d.conn.Write([]byte{steady.WireVersion, steady.WireCmdWrite}) // we want to write blocks...
+			d.conn.Write(d.Policy.ID)                                     // ...to this policy...
+			d.conn.Write(numBlocks)                                       // ...and this many blocks
+
+			// send all blocks
+			for i := 0; i < len(blocks); i++ {
+				d.conn.Write(blocks[i])
+			}
+
+			// read authentication tag from relay
+			l, err := d.conn.Read(buf)
+			if err != nil || l != 8+steady.WireAuthSize {
 				continue
 			}
-			if !bytes.Equal(block[:8], buf[:8]) ||
-				!bytes.Equal(buf[8:], lc.Khash([]byte(token), []byte("write"), d.Policy.ID, block[:8])) {
+			if !bytes.Equal(blocks[len(blocks)-1][:8], buf[:8]) ||
+				!bytes.Equal(buf[8:], lc.Khash([]byte(token), []byte("write"), d.Policy.ID, blocks[len(blocks)-1][:8])) {
 				continue
 			}
 
