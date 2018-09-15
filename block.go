@@ -89,7 +89,7 @@ func packData(events [][]byte, policy Policy,
 	if err != nil {
 		return nil, nil, nil, err
 	}
-	rootHash = lc.Khash(policy.ID, MerkleTreeHash(events), iv)
+	rootHash = lc.Khash(iv, MerkleTreeHash(events))
 	payload = append(payload, iv...)
 
 	if compress {
