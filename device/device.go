@@ -211,7 +211,6 @@ func (d *Device) loggingThread(stateFile string, state *DeviceState,
 func (d *Device) makeBlock(buffer [][]byte, s *DeviceState, encrypt, compress bool,
 	blockChan chan []byte) {
 	t := uint64(time.Now().Unix())
-	log.Printf("index is %d", s.NextIndex)
 	block, err := steady.MakeEncodedBlock(s.NextIndex, s.LenPrev, t,
 		encrypt, compress, d.Policy, buffer, d.Sk)
 	if err != nil {
