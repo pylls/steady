@@ -393,7 +393,7 @@ func (c *Collector) outputValid(ok []Block, out Output, a *Assessment) []Block {
 				out("verified", Proof{
 					AssessmentID: a.ID,
 					EventIndex:   j,
-					//Path:         steady.AuditPath(j, events), // FIXME: make non-recursive
+					Path:         steady.AuditPath(j, events), // FIXME: make non-recursive
 				}, string(events[j]))
 			}
 		}
